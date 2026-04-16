@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at 20% 20%, #111827, #030712 70%);
+  color: #e2e8f0;
+}
+
+.board-square {
+  transition: background-color 0.2s ease, transform 0.12s ease;
+}
+
+.board-square:hover {
+  transform: translateY(-1px);
+}
+
+.piece {
+  width: 86%;
+  height: 86%;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+.piece.selected {
+  transform: scale(1.05);
+  filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.95));
+}
+
+.selected-square {
+  box-shadow: inset 0 0 0 3px rgba(99, 102, 241, 0.85);
+}
+
+.move-hint::after,
+.capture-hint::after,
+.last-move::after,
+.check-king::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.move-hint::after {
+  inset: 35%;
+  border-radius: 9999px;
+  background: rgba(34, 197, 94, 0.45);
+}
+
+.capture-hint::after {
+  inset: 8%;
+  border-radius: 9999px;
+  border: 4px solid rgba(239, 68, 68, 0.8);
+}
+
+.last-move::after {
+  background: rgba(251, 191, 36, 0.28);
+}
+
+.check-king::after {
+  background: rgba(239, 68, 68, 0.35);
+}
