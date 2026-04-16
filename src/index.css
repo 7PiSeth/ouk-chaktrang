@@ -8,6 +8,7 @@
 
 :root {
   color-scheme: dark;
+  --cell-size: clamp(40px, 9vw, 76px);
 }
 
 body {
@@ -23,6 +24,12 @@ body {
 
 .board-square:hover {
   transform: translateY(-1px);
+}
+
+.board-wrap {
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .piece {

@@ -3,13 +3,13 @@ import { ChessGame } from './lib/game';
 import { ChessAI } from './lib/ai';
 
 const PIECE_LABEL = {
-  wp: 'ត',
+  wp: 'ត្រី',
   wn: 'សេះ',
   ws: 'គោល',
   wr: 'ទូក',
   wm: 'នាង',
   wk: 'ស្តេច',
-  bp: 'ត',
+  bp: 'ត្រី',
   bn: 'សេះ',
   bs: 'គោល',
   br: 'ទូក',
@@ -17,18 +17,34 @@ const PIECE_LABEL = {
   bk: 'ស្តេច',
 };
 
-const PIECE_ICON = Object.fromEntries(
-  Object.keys(PIECE_LABEL).map((key) => {
-    const color = key[0] === 'w' ? '#f8fafc' : '#111827';
-    const bg = key[0] === 'w' ? '#475569' : '#fde68a';
-    const short = key[1].toUpperCase();
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-      <circle cx='50' cy='50' r='47' fill='${bg}' stroke='#1f2937' stroke-width='4'/>
-      <text x='50' y='60' text-anchor='middle' font-size='36' font-family='system-ui' fill='${color}' font-weight='700'>${short}</text>
-    </svg>`;
-    return [key, `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`];
-  })
-);
+const PIECE_SHORT = {
+  p: 'P',
+  n: 'N',
+  s: 'S',
+  r: 'R',
+  m: 'M',
+  k: 'K',
+};
+
+function PieceIcon({ piece, selected, label }) {
+  const isWhite = piece.color === 'w';
+  const fill = isWhite ? '#475569' : '#fde68a';
+  const text = isWhite ? '#f8fafc' : '#111827';
+
+  return (
+    <svg
+      className={`piece ${selected ? 'selected' : ''}`}
+      viewBox="0 0 100 100"
+      role="img"
+      aria-label={label}
+    >
+      <circle cx="50" cy="50" r="47" fill={fill} stroke="#1f2937" strokeWidth="4" />
+      <text x="50" y="60" textAnchor="middle" fontSize="36" fontFamily="system-ui" fill={text} fontWeight="700">
+        {PIECE_SHORT[piece.type]}
+      </text>
+    </svg>
+  );
+}
 
 function createSoundEngine() {
   let ctx;
@@ -177,10 +193,11 @@ export default function App() {
       <h1 className="text-3xl md:text-4xl font-bold text-center tracking-wide mb-6">🇰🇭 Ouk Chaktrang</h1>
 
       <section className="grid gap-6 lg:grid-cols-[minmax(280px,640px)_1fr] items-start">
-        <div
-          className="grid aspect-square rounded-2xl overflow-hidden shadow-2xl border border-slate-700"
-          style={{ gridTemplateColumns: 'repeat(8, minmax(0, 1fr))' }}
-        >
+        <div className="board-wrap">
+          <div
+            className="grid rounded-2xl overflow-hidden shadow-2xl border border-slate-700"
+            style={{ gridTemplateColumns: 'repeat(8, var(--cell-size))', gridTemplateRows: 'repeat(8, var(--cell-size))' }}
+          >
           {Array.from({ length: 8 }).map((_, row) =>
             Array.from({ length: 8 }).map((__, col) => {
               const piece = game.getPiece(row, col);
@@ -205,16 +222,17 @@ export default function App() {
                   } ${targetMove ? (piece ? 'capture-hint' : 'move-hint') : ''}`}
                 >
                   {piece && (
-                    <img
-                      className={`piece ${isSelected ? 'selected' : ''}`}
-                      src={PIECE_ICON[`${piece.color}${piece.type}`]}
-                      alt={`${piece.color === 'w' ? 'White' : 'Black'} ${PIECE_LABEL[`${piece.color}${piece.type}`]}`}
+                    <PieceIcon
+                      piece={piece}
+                      selected={Boolean(isSelected)}
+                      label={`${piece.color === 'w' ? 'White' : 'Black'} ${PIECE_LABEL[`${piece.color}${piece.type}`]}`}
                     />
                   )}
                 </button>
               );
             })
           )}
+        </div>
         </div>
 
         <aside className="bg-slate-900/70 border border-slate-700 rounded-2xl p-4 md:p-5 backdrop-blur-sm space-y-4">
