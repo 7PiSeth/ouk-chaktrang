@@ -6,9 +6,9 @@ export class ChessAI {
     this.pieceValues = {
       p: 100,
       n: 320,
-      b: 330,
+      s: 240,
       r: 500,
-      q: 900,
+      m: 120,
       k: 20000,
     };
   }
@@ -29,7 +29,6 @@ export class ChessAI {
       return { score: this.evaluateBoard(game), move: null };
     }
 
-    // Sort captures first so AI feels tactical at shallow depths.
     moves.sort((a, b) => this.movePriority(game, b) - this.movePriority(game, a));
 
     if (maximizingPlayer) {
@@ -71,17 +70,14 @@ export class ChessAI {
 
     let score = 0;
     if (target) score += this.pieceValues[target.type] - this.pieceValues[mover.type] / 10;
-    if (move.isEnPassant) score += this.pieceValues.p;
-    if (move.promotion) score += this.pieceValues[move.promotion];
+    if (move.promotion) score += this.pieceValues[move.promotion] || 0;
 
     return score;
   }
 
   evaluateBoard(game) {
     if (game.gameOver) {
-      if (game.resultReason === 'checkmate') {
-        return game.winner === 'w' ? 100000 : -100000;
-      }
+      if (game.resultReason === 'checkmate') return game.winner === 'w' ? 100000 : -100000;
       return 0;
     }
 
@@ -97,7 +93,6 @@ export class ChessAI {
       }
     }
 
-    // Mobility bonus helps avoid cramped positions.
     const whiteMobility = game.getAllLegalMoves('w').length;
     const blackMobility = game.getAllLegalMoves('b').length;
     score += (whiteMobility - blackMobility) * 2;
@@ -110,14 +105,11 @@ export class ChessAI {
     const centerBonus = Math.max(0, 4 - centerDistance) * 4;
 
     if (piece.type === 'p') {
-      const advance = piece.color === 'w' ? 6 - row : row - 1;
-      return advance * 6 + centerBonus;
+      const advance = piece.color === 'w' ? 5 - row : row - 2;
+      return advance * 8 + centerBonus;
     }
 
-    if (piece.type === 'n' || piece.type === 'b') {
-      return centerBonus;
-    }
-
+    if (piece.type === 'n' || piece.type === 's') return centerBonus;
     return centerBonus / 2;
   }
 }

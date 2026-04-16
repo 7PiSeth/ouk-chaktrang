@@ -1,4 +1,4 @@
-# React Chess (Vite + GitHub Pages)
+# Ouk Chaktrang (Cambodia Chess) - React + Vite
 
 ## Development
 
@@ -14,11 +14,18 @@ npm run build
 npm run preview
 ```
 
+## Variant notes
+
+This project now uses **Cambodia chess (Ouk Chaktrang / Makruk-style)** piece setup and movement:
+
+- back rank: rook, knight, khon, met, king, khon, knight, rook
+- pawns start on row 3/6 (from top/bottom view)
+- khon (`s`) moves one diagonal step + one forward step
+- met (`m`) moves one diagonal step
+- pawn promotes to met on the variant promotion rank
+
 ## GitHub Pages
 
-This repo is configured for GitHub Pages with:
-
 - `vite.config.js` base set to `/ouk-chaktrang/`
-- GitHub Actions workflow in `.github/workflows/deploy.yml`
-
-Push to your default branch and enable **Settings → Pages → Build and deployment → GitHub Actions**.
+- workflow in `.github/workflows/deploy.yml`
+- enable **Settings → Pages → Build and deployment → GitHub Actions**
