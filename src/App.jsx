@@ -17,19 +17,70 @@ const PIECE_LABEL = {
   bk: 'ស្តេច',
 };
 
-const PIECE_SHORT = {
-  p: 'P',
-  n: 'N',
-  s: 'S',
-  r: 'R',
-  m: 'M',
-  k: 'K',
-};
+function PieceShape({ type, tone, stroke }) {
+  if (type === 'p') {
+    return (
+      <>
+        <circle cx="50" cy="50" r="40" fill={tone} stroke={stroke} strokeWidth="3.5" />
+        <circle cx="50" cy="50" r="30" fill="none" stroke={stroke} strokeWidth="3.5" />
+        <circle cx="50" cy="50" r="20" fill="none" stroke={stroke} strokeWidth="3.5" />
+        <circle cx="50" cy="50" r="12" fill="none" stroke={stroke} strokeWidth="3.5" />
+      </>
+    );
+  }
+
+  if (type === 'r') {
+    return (
+      <>
+        <rect x="20" y="60" width="60" height="18" rx="2" fill={tone} stroke={stroke} strokeWidth="3" />
+        <path d="M18 60 L32 46 L68 46 L82 60 Z" fill={tone} stroke={stroke} strokeWidth="3" />
+        <path d="M36 46 L50 35 L64 46 Z" fill={tone} stroke={stroke} strokeWidth="3" />
+      </>
+    );
+  }
+
+  if (type === 'n') {
+    return (
+      <path
+        d="M26 76 L60 76 L60 70 C58 60 56 52 52 42 C48 31 40 22 31 17 L28 21 C32 25 34 29 35 35 C29 37 23 44 22 52 Z"
+        fill={tone}
+        stroke={stroke}
+        strokeWidth="3"
+      />
+    );
+  }
+
+  if (type === 's') {
+    return (
+      <>
+        <path d="M50 18 L56 31 L66 38 L66 48 C66 60 58 68 50 74 C42 68 34 60 34 48 L34 38 L44 31 Z" fill={tone} stroke={stroke} strokeWidth="3" />
+        <rect x="40" y="74" width="20" height="8" fill={tone} stroke={stroke} strokeWidth="3" />
+      </>
+    );
+  }
+
+  if (type === 'm') {
+    return (
+      <>
+        <path d="M50 14 L55 30 L70 38 L70 52 C70 62 60 70 50 78 C40 70 30 62 30 52 L30 38 L45 30 Z" fill={tone} stroke={stroke} strokeWidth="3" />
+        <rect x="36" y="78" width="28" height="7" fill={tone} stroke={stroke} strokeWidth="3" />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <path d="M50 12 L55 24 L62 24 L62 28 L68 32 L68 36 L32 36 L32 32 L38 28 L38 24 L45 24 Z" fill={tone} stroke={stroke} strokeWidth="3" />
+      <path d="M50 36 C64 36 71 46 71 56 C71 64 63 72 50 80 C37 72 29 64 29 56 C29 46 36 36 50 36 Z" fill={tone} stroke={stroke} strokeWidth="3" />
+      <rect x="34" y="80" width="32" height="7" fill={tone} stroke={stroke} strokeWidth="3" />
+    </>
+  );
+}
 
 function PieceIcon({ piece, selected, label }) {
   const isWhite = piece.color === 'w';
-  const fill = isWhite ? '#475569' : '#fde68a';
-  const text = isWhite ? '#f8fafc' : '#111827';
+  const fill = isWhite ? '#E9DEB3' : '#34363B';
+  const stroke = '#0b0b0b';
 
   return (
     <svg
@@ -38,10 +89,7 @@ function PieceIcon({ piece, selected, label }) {
       role="img"
       aria-label={label}
     >
-      <circle cx="50" cy="50" r="47" fill={fill} stroke="#1f2937" strokeWidth="4" />
-      <text x="50" y="60" textAnchor="middle" fontSize="36" fontFamily="system-ui" fill={text} fontWeight="700">
-        {PIECE_SHORT[piece.type]}
-      </text>
+      <PieceShape type={piece.type} tone={fill} stroke={stroke} />
     </svg>
   );
 }
@@ -195,7 +243,7 @@ export default function App() {
       <section className="grid gap-6 lg:grid-cols-[minmax(280px,640px)_1fr] items-start">
         <div className="board-wrap">
           <div
-            className="grid rounded-2xl overflow-hidden shadow-2xl border border-slate-700"
+            className="grid rounded-2xl overflow-hidden shadow-2xl border-2 border-black"
             style={{ gridTemplateColumns: 'repeat(8, var(--cell-size))', gridTemplateRows: 'repeat(8, var(--cell-size))' }}
           >
           {Array.from({ length: 8 }).map((_, row) =>
@@ -215,8 +263,8 @@ export default function App() {
                   key={`${row}-${col}`}
                   type="button"
                   onClick={() => handleSquareClick(row, col)}
-                  className={`board-square relative w-full h-full p-0 border-0 appearance-none flex items-center justify-center ${
-                    isDark ? 'bg-slate-700/95 hover:bg-slate-600' : 'bg-amber-100/95 hover:bg-amber-200'
+                  className={`board-square relative w-full h-full p-0 border border-black appearance-none flex items-center justify-center ${
+                    isDark ? 'bg-[#F4AD4A]' : 'bg-[#F4AD4A]'
                   } ${isSelected ? 'selected-square' : ''} ${isLastMove ? 'last-move' : ''} ${
                     isCheck ? 'check-king' : ''
                   } ${targetMove ? (piece ? 'capture-hint' : 'move-hint') : ''}`}
