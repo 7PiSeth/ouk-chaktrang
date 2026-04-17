@@ -66,13 +66,13 @@ function PieceIcon({ piece, selected, label, animate }) {
 
 // ── Human-readable move formatter ────────────────────────────────
 const PIECE_NAME = { p: 'Pawn', n: 'Horse', s: 'Khon', r: 'Rook', m: 'Queen', k: 'King' };
-const FILE_LABEL = ['a','b','c','d','e','f','g','h'];
+const FILE_LABEL = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
 function formatMove(entry) {
   // entry: { from, to, piece, color, capture, notation }
   const pieceName = PIECE_NAME[entry.piece] ?? entry.piece.toUpperCase();
   const from = `${FILE_LABEL[entry.from.col]}${8 - entry.from.row}`;
-  const to   = `${FILE_LABEL[entry.to.col]}${8 - entry.to.row}`;
+  const to = `${FILE_LABEL[entry.to.col]}${8 - entry.to.row}`;
   const action = entry.capture ? '×' : '→';
   return `${pieceName} ${from}${action}${to}`;
 }
@@ -97,22 +97,22 @@ function createSoundEngine() {
     osc.stop(now + duration);
   };
   return {
-    move:    () => beep(500, 0.06, 'triangle', 0.035),
+    move: () => beep(500, 0.06, 'triangle', 0.035),
     capture: () => beep(210, 0.12, 'sawtooth', 0.045),
-    check:   () => { beep(700, 0.08, 'square', 0.04); setTimeout(() => beep(840, 0.08, 'square', 0.04), 70); },
+    check: () => { beep(700, 0.08, 'square', 0.04); setTimeout(() => beep(840, 0.08, 'square', 0.04), 70); },
   };
 }
 
 // ── App ───────────────────────────────────────────────────────────
 export default function App() {
-  const [game, setGame]           = useState(() => new ChessGame());
-  const [selected, setSelected]   = useState(null);
+  const [game, setGame] = useState(() => new ChessGame());
+  const [selected, setSelected] = useState(null);
   const [legalMoves, setLegalMoves] = useState([]);
   const [aiEnabled, setAiEnabled] = useState(true);
   const [isThinking, setIsThinking] = useState(false);
-  const [animKey, setAnimKey]     = useState(null); // "row-col" of destination to animate
+  const [animKey, setAnimKey] = useState(null); // "row-col" of destination to animate
 
-  const ai    = useMemo(() => new ChessAI(3), []);
+  const ai = useMemo(() => new ChessAI(3), []);
   const sound = useMemo(() => createSoundEngine(), []);
 
   const checkSquares = useMemo(() => {
@@ -231,22 +231,15 @@ export default function App() {
         : 'status-dot black-turn';
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-6 md:py-10">
-      <h1 className="text-3xl md:text-4xl font-bold text-center mb-8 title-gradient font-khmer">
+    <main className="app-root">
+      <h1 className="text-3xl md:text-4xl font-bold text-center mb-6 title-gradient font-khmer">
         អុក ចត្រង្គ
       </h1>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(280px,640px)_1fr] items-start">
+      <section className="app-grid">
         {/* ── Board ── */}
-        <div className="board-wrap mx-auto">
-          <div
-            className="rounded-2xl overflow-hidden shadow-2xl border border-black/60"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(8, var(--cell-size))',
-              gridTemplateRows: 'repeat(8, var(--cell-size))',
-            }}
-          >
+        <div className="board-wrap">
+          <div className="board-grid">
             {Array.from({ length: 64 }, (_, idx) => {
               const row = Math.floor(idx / 8);
               const col = idx % 8;
@@ -254,18 +247,18 @@ export default function App() {
               const isDark = (row + col) % 2 !== 0;
               const isSelected = selected?.row === row && selected?.col === col;
               const isLastFrom = game.lastMove?.from.row === row && game.lastMove?.from.col === col;
-              const isLastTo   = game.lastMove?.to.row   === row && game.lastMove?.to.col   === col;
+              const isLastTo = game.lastMove?.to.row === row && game.lastMove?.to.col === col;
               const isLastMove = isLastFrom || isLastTo;
               const targetMove = legalMoves.find((m) => m.to.row === row && m.to.col === col);
-              const isCheck    = checkSquares.some((sq) => sq.row === row && sq.col === col);
+              const isCheck = checkSquares.some((sq) => sq.row === row && sq.col === col);
               const shouldAnim = animKey === `${row}-${col}`;
 
               const bg = isDark ? '#c8902a' : '#f5c842';
 
-              let cls = 'board-square flex items-center justify-center w-full h-full p-0 border-0 appearance-none';
+              let cls = 'board-square';
               if (isSelected) cls += ' selected-square';
               if (isLastMove) cls += ' last-move';
-              if (isCheck)    cls += ' check-king';
+              if (isCheck) cls += ' check-king';
               if (targetMove) cls += piece ? ' capture-hint' : ' move-hint';
 
               return (
@@ -275,7 +268,7 @@ export default function App() {
                   onClick={() => handleSquareClick(row, col)}
                   className={cls}
                   style={{ background: bg }}
-                  aria-label={piece ? `${piece.color === 'w' ? 'White' : 'Black'} ${PIECE_LABEL[`${piece.color}${piece.type}`]} at ${String.fromCharCode(97+col)}${8-row}` : undefined}
+                  aria-label={piece ? `${piece.color === 'w' ? 'White' : 'Black'} ${PIECE_LABEL[`${piece.color}${piece.type}`]} at ${String.fromCharCode(97 + col)}${8 - row}` : undefined}
                 >
                   {piece && (
                     <PieceIcon
@@ -306,7 +299,7 @@ export default function App() {
 
           {/* Actions */}
           <div className="grid grid-cols-2 gap-2">
-            <button onClick={handleUndo}    className="btn btn-undo">↩ Undo</button>
+            <button onClick={handleUndo} className="btn btn-undo">↩ Undo</button>
             <button onClick={handleRestart} className="btn btn-restart">↺ Restart</button>
           </div>
 

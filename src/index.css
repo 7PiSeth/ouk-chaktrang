@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Moulpali&family=Inter:wght@400;500;600;700&display=swap');
+/* ─── Font is loaded via <link> in index.html (avoids @import ordering issues) ─── */
 
 .font-khmer {
   font-family: 'Moulpali', sans-serif;
@@ -15,42 +15,103 @@
 
 :root {
   color-scheme: dark;
-  --cell-size: clamp(40px, 9vw, 76px);
-  --board-light: #f5c842;
-  --board-dark: #c8902a;
-  --accent: #0a84ff;
-  --accent-glow: rgba(10, 132, 255, 0.6);
-  --check-color: rgba(255, 59, 48, 0.42);
-  --last-move-color: rgba(255, 214, 10, 0.32);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /*
+   * Board cell size:
+   *   - On small screens: fill the viewport width minus 2×16px page padding and 2px border
+   *   - Clamp between 36 px (tiny phones) and 80 px (large desktops)
+   */
+  --page-px: 2rem;          /* px-4 on each side = 2 × 1rem */
+  --board-border: 4px;
+  --cell-size: clamp(36px, calc((100vw - var(--page-px) - var(--board-border)) / 8), 80px);
 }
 
-body {
+/* ─── Base ──────────────────────────────────────────────────────── */
+html, body {
   margin: 0;
-  min-height: 100vh;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  padding: 0;
+  min-height: 100dvh;       /* dynamic viewport height for mobile browsers */
   background: radial-gradient(ellipse at 30% 10%, #1c1c2e 0%, #0a0a0f 60%, #0d0d1a 100%);
   color: #f0f0f5;
+  /* Prevent zoom on input tap on iOS */
+  -webkit-text-size-adjust: 100%;
 }
 
-/* ── Board ── */
+/* ─── Layout wrapper ─────────────────────────────────────────────── */
+.app-root {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 2rem;
+}
+
+/* Desktop: side-by-side */
+@media (min-width: 900px) {
+  .app-root {
+    padding: 2rem 1.5rem 3rem;
+  }
+}
+
+/* ─── Main grid ──────────────────────────────────────────────────── */
+.app-grid {
+  display: grid;
+  gap: 1.25rem;
+  align-items: start;
+  /* Mobile/tablet: board on top, panel below */
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .app-grid {
+    /* Desktop: board left, panel fills remaining space */
+    grid-template-columns: max-content 1fr;
+    gap: 1.75rem;
+  }
+}
+
+/* ─── Board wrapper ──────────────────────────────────────────────── */
 .board-wrap {
-  width: fit-content;
-  max-width: 100%;
-  overflow-x: auto;
+  /* Centre the board when it's narrower than the grid column */
+  margin: 0 auto;
+  line-height: 0;            /* remove gap under inline-block children */
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,0.8),
+    0 24px 60px rgba(0,0,0,0.7),
+    0 4px 16px rgba(0,0,0,0.5);
 }
 
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(8, var(--cell-size));
+  grid-template-rows:    repeat(8, var(--cell-size));
+}
+
+/* ─── Board squares ──────────────────────────────────────────────── */
 .board-square {
   position: relative;
-  transition: background-color 0.15s ease;
+  width: var(--cell-size);
+  height: var(--cell-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  appearance: none;
   cursor: pointer;
+  transition: filter 0.12s ease;
+  -webkit-tap-highlight-color: transparent; /* remove grey flash on iOS tap */
 }
 
 .board-square:hover {
-  filter: brightness(1.12);
+  filter: brightness(1.13);
 }
 
-/* ── Piece ── */
+/* ─── Piece ──────────────────────────────────────────────────────── */
 .piece {
+  /* Size relative to cell so it scales at every breakpoint */
   width: 82%;
   height: 82%;
   min-width: 0;
@@ -64,22 +125,21 @@ body {
 
 .piece.selected {
   transform: scale(1.12) translateY(-4%);
-  filter: drop-shadow(0 6px 18px var(--accent-glow));
+  filter: drop-shadow(0 6px 18px rgba(10, 132, 255, 0.7));
 }
 
-/* Piece "drop" animation when a move is played */
 @keyframes piece-drop {
   0%   { transform: scale(1.18) translateY(-12%); opacity: 0.7; }
-  60%  { transform: scale(0.95) translateY(3%); opacity: 1; }
-  80%  { transform: scale(1.04) translateY(-2%); }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
+  60%  { transform: scale(0.95) translateY(3%);   opacity: 1;   }
+  80%  { transform: scale(1.04) translateY(-2%);               }
+  100% { transform: scale(1)    translateY(0);                  }
 }
 
 .piece-animate {
   animation: piece-drop 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* ── Square Overlays ── */
+/* ─── Square overlays ────────────────────────────────────────────── */
 .selected-square {
   box-shadow: inset 0 0 0 3px rgba(10, 132, 255, 0.9);
 }
@@ -97,7 +157,7 @@ body {
 .move-hint::after {
   inset: 34%;
   border-radius: 9999px;
-  background: rgba(50, 215, 75, 0.52);
+  background: rgba(50, 215, 75, 0.55);
   box-shadow: 0 0 8px rgba(50, 215, 75, 0.4);
 }
 
@@ -109,24 +169,34 @@ body {
 }
 
 .last-move::after {
-  background: var(--last-move-color);
+  background: rgba(255, 214, 10, 0.3);
 }
 
 .check-king::after {
-  background: var(--check-color);
+  background: rgba(255, 59, 48, 0.4);
   box-shadow: inset 0 0 20px rgba(255, 59, 48, 0.5);
 }
 
-/* ── Panel / Glassmorphism ── */
+/* ─── Side panel (glass) ─────────────────────────────────────────── */
 .glass-panel {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 18px;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  /* On mobile: full width under the board */
+  width: 100%;
 }
 
-/* ── Buttons – Apple-style ── */
+@media (min-width: 900px) {
+  .glass-panel {
+    /* On desktop: let it fill the right column */
+    min-width: 240px;
+    max-width: 360px;
+  }
+}
+
+/* ─── Buttons – Apple-style ──────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -137,60 +207,44 @@ body {
   font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.01em;
-  padding: 0.45rem 1rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
   transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
   will-change: transform;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.btn:active {
-  transform: scale(0.95);
-}
+.btn:active { transform: scale(0.94); }
 
 .btn-ai-on {
   background: linear-gradient(135deg, #30d158, #25a244);
   color: #fff;
   box-shadow: 0 0 14px rgba(48, 209, 88, 0.35);
 }
-
-.btn-ai-on:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 0 20px rgba(48, 209, 88, 0.55);
-}
+.btn-ai-on:hover  { filter: brightness(1.1); box-shadow: 0 0 20px rgba(48, 209, 88, 0.55); }
 
 .btn-ai-off {
   background: linear-gradient(135deg, #0a84ff, #0060df);
   color: #fff;
   box-shadow: 0 0 14px rgba(10, 132, 255, 0.35);
 }
-
-.btn-ai-off:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 0 20px rgba(10, 132, 255, 0.55);
-}
+.btn-ai-off:hover { filter: brightness(1.1); box-shadow: 0 0 20px rgba(10, 132, 255, 0.55); }
 
 .btn-undo {
   background: rgba(255, 255, 255, 0.08);
   color: #f0f0f5;
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
-
-.btn-undo:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
+.btn-undo:hover { background: rgba(255, 255, 255, 0.14); }
 
 .btn-restart {
   background: linear-gradient(135deg, #ff453a, #c0392b);
   color: #fff;
   box-shadow: 0 0 14px rgba(255, 69, 58, 0.3);
 }
+.btn-restart:hover { filter: brightness(1.1); box-shadow: 0 0 20px rgba(255, 69, 58, 0.5); }
 
-.btn-restart:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 0 20px rgba(255, 69, 58, 0.5);
-}
-
-/* ── Title gradient ── */
+/* ─── Title ──────────────────────────────────────────────────────── */
 .title-gradient {
   background: linear-gradient(135deg, #f5c842 0%, #ff9f0a 50%, #ff6b35 100%);
   -webkit-background-clip: text;
@@ -198,10 +252,10 @@ body {
   background-clip: text;
 }
 
-/* ── Status dot pulse ── */
+/* ─── Status dot ─────────────────────────────────────────────────── */
 @keyframes status-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.55; transform: scale(0.85); }
+  0%, 100% { opacity: 1;    transform: scale(1);    }
+  50%       { opacity: 0.5; transform: scale(0.82); }
 }
 
 .status-dot {
@@ -209,26 +263,21 @@ body {
   height: 8px;
   border-radius: 9999px;
   display: inline-block;
+  flex-shrink: 0;
   margin-right: 6px;
 }
+.status-dot.thinking   { background: #ff9f0a; animation: status-pulse 0.9s ease-in-out infinite; }
+.status-dot.white-turn { background: #f0f0f5; }
+.status-dot.black-turn { background: #3a3a4a; border: 1.5px solid #8a8aaa; }
+.status-dot.gameover   { background: #ff453a; }
 
-.status-dot.thinking {
-  background: #ff9f0a;
-  animation: status-pulse 0.9s ease-in-out infinite;
-}
-
-.status-dot.white-turn  { background: #f0f0f5; }
-.status-dot.black-turn  { background: #3a3a4a; border: 1.5px solid #8a8aaa; }
-.status-dot.gameover    { background: #ff453a; }
-
-/* ── Move history ── */
+/* ─── Move history ───────────────────────────────────────────────── */
 .move-history-list {
-  max-height: 240px;
+  max-height: 220px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.12) transparent;
 }
-
-.move-history-list::-webkit-scrollbar { width: 4px; }
+.move-history-list::-webkit-scrollbar       { width: 4px; }
 .move-history-list::-webkit-scrollbar-track { background: transparent; }
 .move-history-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 9999px; }
