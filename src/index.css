@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Angkor&family=Battambang&family=Bayon&family=Bokor&family=Chenla&family=Content&family=Dangrek&family=Fasthand&family=Freehand&family=Great+Vibes&family=Hanuman&family=Khmer&family=Koh+Santepheap&family=Koulen&family=Metal&family=Moul&family=Moulpali&family=Nokora&family=Odor+Mean+Chey&family=Poppins&family=Preahvihear&family=Raleway:wght@300;500&family=Siemreap&family=Suwannaphum&family=Taprom&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Moul&display=swap');
 
 
 @tailwind base;
@@ -18,14 +18,14 @@
 
 :root {
   color-scheme: dark;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Battambang', system-ui, -apple-system, sans-serif;
 
   /*
    * Board cell size:
    *   - On small screens: fill the viewport width minus 2×16px page padding and 2px border
    *   - Clamp between 36 px (tiny phones) and 80 px (large desktops)
    */
-  --page-px: 2rem;          /* px-4 on each side = 2 × 1rem */
+  --page-px: 2rem;
   --board-border: 4px;
   --cell-size: clamp(36px, calc((100vw - var(--page-px) - var(--board-border)) / 8), 80px);
 }
@@ -41,35 +41,41 @@ html, body {
   -webkit-text-size-adjust: 100%;
 }
 
-/* ─── Layout wrapper ─────────────────────────────────────────────── */
+#root {
+  min-height: 100dvh;
+}
+
 .app-root {
   width: 100%;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 1.25rem 1rem 2rem;
+  min-height: 100dvh;
+  padding: 0.9rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-/* Desktop: side-by-side */
 @media (min-width: 900px) {
   .app-root {
-    padding: 2rem 1.5rem 3rem;
+    padding: 0.8rem 1.2rem 0.9rem;
   }
+  body { overflow: hidden; }
 }
 
-/* ─── Main grid ──────────────────────────────────────────────────── */
 .app-grid {
   display: grid;
   gap: 1.25rem;
-  align-items: start;
-  /* Mobile/tablet: board on top, panel below */
+  align-items: center;
   grid-template-columns: 1fr;
+  flex: 1;
+  min-height: 0;
 }
 
 @media (min-width: 900px) {
   .app-grid {
-    /* Desktop: board left, panel fills remaining space */
     grid-template-columns: max-content 1fr;
-    gap: 1.75rem;
+    gap: 1.2rem;
   }
 }
 
@@ -123,10 +129,8 @@ html, body {
   flex-shrink: 0;
 }
 
-.coord-top    { margin-bottom: 2px; }
 .coord-bottom { margin-top:    2px; }
 .coord-left   { margin-right:  2px; }
-.coord-right  { margin-left:   2px; }
 
 /* ─── Board wrapper ──────────────────────────────────────────────── */
 .board-wrap {
@@ -135,7 +139,7 @@ html, body {
   overflow: hidden;
   box-shadow:
     0 0 0 2px rgba(0,0,0,0.8),
-    0 24px 60px rgba(0,0,0,0.7),
+    0 16px 40px rgba(0,0,0,0.62),
     0 4px 16px rgba(0,0,0,0.5);
 }
 
@@ -246,9 +250,12 @@ html, body {
 
 @media (min-width: 900px) {
   .glass-panel {
-    /* On desktop: let it fill the right column */
     min-width: 380px;
     max-width: 460px;
+    max-height: calc(100dvh - 5.6rem);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 }
 
@@ -306,7 +313,7 @@ html, body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  height: 50px;
+  height: 42px;
 }
 
 /* ─── Status dot ─────────────────────────────────────────────────── */
@@ -330,11 +337,47 @@ html, body {
 
 /* ─── Move history ───────────────────────────────────────────────── */
 .move-history-list {
-  max-height: 220px;
+  max-height: min(280px, 34dvh);
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.12) transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
 }
 .move-history-list::-webkit-scrollbar       { width: 4px; }
 .move-history-list::-webkit-scrollbar-track { background: transparent; }
 .move-history-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 9999px; }
+
+.move-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.82rem;
+}
+
+.move-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  background: rgba(15, 15, 24, 0.9);
+  color: rgba(255, 255, 255, 0.75);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.move-table thead th:first-child { width: 2.2rem; }
+
+.move-table tbody td {
+  padding: 0.38rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.move-table tbody td:first-child {
+  color: rgba(255, 255, 255, 0.45);
+}
