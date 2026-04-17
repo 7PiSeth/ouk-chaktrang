@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { ChessGame } from './lib/game';
 import { ChessAI } from './lib/ai';
 
@@ -9,7 +9,7 @@ const PIECE_LABEL = {
 };
 
 // ── SVG piece shapes ──────────────────────────────────────────────
-function PieceShape({ type, tone, stroke }) {
+const PieceShape = memo(function PieceShape({ type, tone, stroke }) {
   if (type === 'p') return (
     <>
       <circle cx="50" cy="50" r="40" fill={tone} stroke={stroke} strokeWidth="3.5" />
@@ -51,9 +51,9 @@ function PieceShape({ type, tone, stroke }) {
       <rect x="34" y="80" width="32" height="7" fill={tone} stroke={stroke} strokeWidth="3" />
     </>
   );
-}
+});
 
-function PieceIcon({ piece, selected, label, animate }) {
+const PieceIcon = memo(function PieceIcon({ piece, selected, label, animate }) {
   const fill = piece.color === 'w' ? '#EDE0B0' : '#2a2c33';
   const stroke = piece.color === 'w' ? '#7a5c1a' : '#111';
   const cls = `piece${selected ? ' selected' : ''}${animate ? ' piece-animate' : ''}`;
@@ -62,7 +62,7 @@ function PieceIcon({ piece, selected, label, animate }) {
       <PieceShape type={piece.type} tone={fill} stroke={stroke} />
     </svg>
   );
-}
+});
 
 // ── Human-readable move formatter ────────────────────────────────
 const PIECE_NAME_KH = { p: 'ត្រី', n: 'សេះ', s: 'គោល', r: 'ទូក', m: 'នាង', k: 'ស្តេច' };
@@ -128,6 +128,19 @@ export default function App() {
       }
     return [];
   }, [game]);
+  const checkKeySet = useMemo(() => new Set(checkSquares.map((sq) => `${sq.row}-${sq.col}`)), [checkSquares]);
+  const legalMoveTargetSet = useMemo(() => new Set(legalMoves.map((m) => `${m.to.row}-${m.to.col}`)), [legalMoves]);
+  const legalMoveCaptureSet = useMemo(() => (
+    new Set(legalMoves.filter((m) => !!game.getPiece(m.to.row, m.to.col)).map((m) => `${m.to.row}-${m.to.col}`))
+  ), [legalMoves, game]);
+  const historyRows = useMemo(
+    () => Array.from({ length: Math.ceil(game.history.length / 2) }, (_, idx) => ({
+      no: idx + 1,
+      white: game.history[idx * 2]?.move,
+      black: game.history[idx * 2 + 1]?.move,
+    })),
+    [game.history],
+  );
 
   // ── Play a move and trigger destination animation
   const playMove = useCallback((move, nextGame) => {
@@ -241,40 +254,30 @@ export default function App() {
       </h1>
 
       <section className="app-grid">
-        {/* ── Board with coordinate labels ── */}
-        <div className="board-outer">
-          {/* Top: column labels (ក–ជ) */}
-          {/* <div className="coord-row coord-top">
-            <div className="coord-corner" />
-            {FILE_LABEL_KH.map((lbl) => (
-              <div key={lbl} className="coord-cell">{lbl}</div>
-            ))}
-            <div className="coord-corner" />
-          </div> */}
-
+          <div className="board-outer">
           <div className="coord-body">
-            {/* Left: row labels (១–៨) */}
             <div className="coord-col coord-left">
               {Array.from({ length: 8 }, (_, r) => (
                 <div key={r} className="coord-cell">{toKhNum(8 - r)}</div>
               ))}
             </div>
 
-            {/* Board */}
             <div className="board-wrap">
               <div className="board-grid">
                 {Array.from({ length: 64 }, (_, idx) => {
                   const row = Math.floor(idx / 8);
                   const col = idx % 8;
+                  const squareKey = `${row}-${col}`;
                   const piece = game.getPiece(row, col);
                   const isDark = (row + col) % 2 !== 0;
                   const isSelected = selected?.row === row && selected?.col === col;
                   const isLastFrom = game.lastMove?.from.row === row && game.lastMove?.from.col === col;
                   const isLastTo = game.lastMove?.to.row === row && game.lastMove?.to.col === col;
                   const isLastMove = isLastFrom || isLastTo;
-                  const targetMove = legalMoves.find((m) => m.to.row === row && m.to.col === col);
-                  const isCheck = checkSquares.some((sq) => sq.row === row && sq.col === col);
-                  const shouldAnim = animKey === `${row}-${col}`;
+                  const isTarget = legalMoveTargetSet.has(squareKey);
+                  const isCaptureTarget = legalMoveCaptureSet.has(squareKey);
+                  const isCheck = checkKeySet.has(squareKey);
+                  const shouldAnim = animKey === squareKey;
 
                   const bg = isDark ? '#c8902a' : '#f5c842';
 
@@ -282,7 +285,7 @@ export default function App() {
                   if (isSelected) cls += ' selected-square';
                   if (isLastMove) cls += ' last-move';
                   if (isCheck) cls += ' check-king';
-                  if (targetMove) cls += piece ? ' capture-hint' : ' move-hint';
+                  if (isTarget) cls += isCaptureTarget ? ' capture-hint' : ' move-hint';
 
                   return (
                     <button
@@ -306,22 +309,13 @@ export default function App() {
                 })}
               </div>
             </div>
-
-            {/* Right: row labels (១–៨) */}
-            {/* <div className="coord-col coord-right">
-              {Array.from({ length: 8 }, (_, r) => (
-                <div key={r} className="coord-cell">{toKhNum(8 - r)}</div>
-              ))}
-            </div> */}
           </div>
 
-          {/* Bottom: column labels (ក–ជ) */}
           <div className="coord-row coord-bottom">
             <div className="coord-corner" />
             {FILE_LABEL_KH.map((lbl) => (
               <div key={lbl} className="coord-cell">{lbl}</div>
             ))}
-            {/* <div className="coord-corner" /> */}
           </div>
         </div>
 
@@ -354,26 +348,28 @@ export default function App() {
             <p className="text-sm text-white/55 mt-1">{detailText}</p>
           </div>
 
-          {/* Move history */}
           <div className="rounded-xl bg-white/5 border border-white/8 p-3">
             <p className="text-xs uppercase tracking-widest text-white/40 mb-2">ប្រវត្តិការដើរ</p>
-            <ol className="move-history-list text-sm space-y-0.5">
-              {Array.from({ length: Math.ceil(game.history.length / 2) }, (_, idx) => {
-                const wEntry = game.history[idx * 2]?.move;
-                const bEntry = game.history[idx * 2 + 1]?.move;
-                return (
-                  <li
-                    key={idx}
-                    className="grid gap-2 py-0.5 border-b border-white/6"
-                    style={{ gridTemplateColumns: '2.2rem 1fr 1fr' }}
-                  >
-                    <span className="text-white/30">{toKhNum(idx + 1)}.</span>
-                    <span className="text-white/80">{wEntry ? formatMove(wEntry) : ''}</span>
-                    <span className="text-white/55">{bEntry ? formatMove(bEntry) : ''}</span>
-                  </li>
-                );
-              })}
-            </ol>
+            <div className="move-history-list">
+              <table className="move-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>បង្កោល ស</th>
+                    <th>បង្កោល ខ្មៅ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyRows.map((row) => (
+                    <tr key={row.no}>
+                      <td>{toKhNum(row.no)}</td>
+                      <td>{row.white ? formatMove(row.white) : ''}</td>
+                      <td>{row.black ? formatMove(row.black) : ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </aside>
       </section>
