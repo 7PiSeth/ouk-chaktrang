@@ -11,6 +11,12 @@ const PIECE_NAME_KH = { p: 'ត្រី', n: 'សេះ', s: 'គោល', r: '�
 const FILE_LABEL_KH = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច', 'ឆ', 'ជ'];
 const KHMER_DIGITS = ['', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨'];
 const toKhNum = (n) => KHMER_DIGITS[n] ?? String(n);
+const AI_LEVELS = [
+  { label: 'Easy', value: 'easy', depth: 1 },
+  { label: 'Meduim', value: 'meduim', depth: 2 },
+  { label: 'Hard', value: 'hard', depth: 3 },
+  { label: 'Very hard', value: 'very_hard', depth: 4 },
+];
 
 const CELL_SIZE = 'clamp(36px, calc((100vw - 2rem - 4px) / 8), 80px)';
 const COORD_FONT_SIZE = 'clamp(0.6rem, calc(0.22 * clamp(36px, calc((100vw - 2rem - 4px) / 8), 80px)), 0.85rem)';
@@ -109,10 +115,15 @@ export default function App() {
   const [selected, setSelected] = useState(null);
   const [legalMoves, setLegalMoves] = useState([]);
   const [aiEnabled, setAiEnabled] = useState(true);
+  const [aiLevel, setAiLevel] = useState('hard');
   const [isThinking, setIsThinking] = useState(false);
   const [animKey, setAnimKey] = useState(null);
 
-  const ai = useMemo(() => new ChessAI(3), []);
+  const aiDepth = useMemo(
+    () => AI_LEVELS.find((lvl) => lvl.value === aiLevel)?.depth ?? 3,
+    [aiLevel],
+  );
+  const ai = useMemo(() => new ChessAI(aiDepth), [aiDepth]);
   const sound = useMemo(() => createSoundEngine(), []);
 
   const checkSquares = useMemo(() => {
@@ -322,6 +333,21 @@ export default function App() {
               >
                 {aiEnabled ? '🤖 AI: បើក' : '👥 AI: បិទ'}
               </button>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs uppercase tracking-widest text-white/40">AI Level</p>
+              <select
+                value={aiLevel}
+                onChange={(e) => setAiLevel(e.target.value)}
+                className="w-[150px] rounded-[10px] border border-white/15 bg-white/10 px-3 py-2 text-sm font-semibold text-white outline-none transition focus:border-white/30 focus:bg-white/15"
+              >
+                {AI_LEVELS.map((level) => (
+                  <option key={level.value} value={level.value} className="bg-[#12121b] text-white">
+                    {level.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
