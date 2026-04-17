@@ -14,22 +14,14 @@ export class ChessGame {
     this.winner = null;
     this.resultReason = null;
     this.fullmoveNumber = 1;
-
     this.setupInitialPosition();
   }
 
   setupInitialPosition() {
-    // Ouk Chaktrang/Makruk-like opening arrangement.
-    // Back rank: rook, knight, khon, met, king, khon, knight, rook.
     const back = ['r', 'n', 's', 'm', 'k', 's', 'n', 'r'];
-
-    for (let col = 0; col < 8; col += 1) {
+    for (let col = 0; col < 8; col++) {
       this.board[0][col] = { type: back[col], color: 'b', hasMoved: false };
       this.board[7][col] = { type: back[col], color: 'w', hasMoved: false };
-    }
-
-    // Pawns start one rank ahead of the back pieces (not on the 2nd/7th ranks).
-    for (let col = 0; col < 8; col += 1) {
       this.board[2][col] = { type: 'p', color: 'b', hasMoved: false };
       this.board[5][col] = { type: 'p', color: 'w', hasMoved: false };
     }
@@ -37,10 +29,10 @@ export class ChessGame {
 
   clone() {
     const copy = new ChessGame();
-    copy.board = this.board.map((row) => row.map((piece) => (piece ? { ...piece } : null)));
+    copy.board = this.board.map((row) => row.map((p) => (p ? { ...p } : null)));
     copy.turn = this.turn;
     copy.lastMove = this.lastMove ? { ...this.lastMove } : null;
-    copy.history = this.history.map((entry) => ({ ...entry }));
+    copy.history = this.history.map((e) => ({ ...e }));
     copy.gameOver = this.gameOver;
     copy.winner = this.winner;
     copy.resultReason = this.resultReason;
@@ -57,13 +49,13 @@ export class ChessGame {
     return this.board[row][col];
   }
 
-  isEnemyPiece(row, col, color) {
-    const piece = this.getPiece(row, col);
-    return !!piece && piece.color !== color;
+  isEmpty(row, col) {
+    return this.board[row][col] === null;
   }
 
-  isEmpty(row, col) {
-    return this.getPiece(row, col) === null;
+  isEnemyPiece(row, col, color) {
+    const p = this.board[row][col];
+    return !!p && p.color !== color;
   }
 
   sameMove(a, b) {
@@ -76,6 +68,28 @@ export class ChessGame {
     );
   }
 
+  // ── Fast in-place make/unmake for legality checks (no allocation) ──
+
+  _applyTemp(move) {
+    const { from, to, promotion } = move;
+    const piece = this.board[from.row][from.col];
+    const captured = this.board[to.row][to.col];
+
+    this.board[from.row][from.col] = null;
+    const moved = promotion ? { ...piece, type: promotion, hasMoved: true } : { ...piece, hasMoved: true };
+    this.board[to.row][to.col] = moved;
+
+    return { piece, captured, moved };
+  }
+
+  _undoTemp(move, snapshot) {
+    const { from, to } = move;
+    this.board[from.row][from.col] = snapshot.piece;
+    this.board[to.row][to.col] = snapshot.captured;
+  }
+
+  // ── Public move API ──
+
   makeMove(move) {
     if (this.gameOver) return false;
 
@@ -83,13 +97,13 @@ export class ChessGame {
     const selected = legalMoves.find((m) => this.sameMove(m, move));
     if (!selected) return false;
 
-    this.applyMove(selected, true);
+    this._commitMove(selected);
     this.updateGameStateAfterMove();
     return selected;
   }
 
-  applyMove(move, recordHistory = false) {
-    const piece = this.getPiece(move.from.row, move.from.col);
+  _commitMove(move) {
+    const piece = this.board[move.from.row][move.from.col];
     if (!piece) return;
 
     const prevState = {
@@ -102,11 +116,8 @@ export class ChessGame {
       fullmoveNumber: this.fullmoveNumber,
     };
 
-    const capturedPiece = this.getPiece(move.to.row, move.to.col);
-    const capture = !!capturedPiece;
-
+    const capture = !!this.board[move.to.row][move.to.col];
     this.board[move.from.row][move.from.col] = null;
-
     const movedPiece = { ...piece, hasMoved: true };
     if (move.promotion) movedPiece.type = move.promotion;
     this.board[move.to.row][move.to.col] = movedPiece;
@@ -120,35 +131,61 @@ export class ChessGame {
       notation: this.toNotation(move, piece, capture),
     };
 
-    if (recordHistory) {
-      this.history.push({ prevState, move: { ...this.lastMove } });
-    }
+    this.history.push({ prevState, move: { ...this.lastMove } });
 
-    if (this.turn === 'b') this.fullmoveNumber += 1;
+    if (this.turn === 'b') this.fullmoveNumber++;
+    this.turn = this.turn === 'w' ? 'b' : 'w';
+  }
+
+  // Kept for AI use (clones game and uses _commitMove directly)
+  applyMove(move, recordHistory = false) {
+    const piece = this.board[move.from.row][move.from.col];
+    if (!piece) return;
+
+    const prevState = recordHistory
+      ? { board: this.board.map((row) => row.map((p) => (p ? { ...p } : null))), turn: this.turn, lastMove: this.lastMove ? { ...this.lastMove } : null, gameOver: this.gameOver, winner: this.winner, resultReason: this.resultReason, fullmoveNumber: this.fullmoveNumber }
+      : null;
+
+    const capture = !!this.board[move.to.row][move.to.col];
+    this.board[move.from.row][move.from.col] = null;
+    const movedPiece = { ...piece, hasMoved: true };
+    if (move.promotion) movedPiece.type = move.promotion;
+    this.board[move.to.row][move.to.col] = movedPiece;
+
+    this.lastMove = {
+      from: { ...move.from },
+      to: { ...move.to },
+      piece: movedPiece.type,
+      color: movedPiece.color,
+      capture,
+      notation: this.toNotation(move, piece, capture),
+    };
+
+    if (recordHistory) this.history.push({ prevState, move: { ...this.lastMove } });
+    if (this.turn === 'b') this.fullmoveNumber++;
     this.turn = this.turn === 'w' ? 'b' : 'w';
   }
 
   undo() {
     const entry = this.history.pop();
     if (!entry) return false;
-
-    this.board = entry.prevState.board;
-    this.turn = entry.prevState.turn;
-    this.lastMove = entry.prevState.lastMove;
-    this.gameOver = entry.prevState.gameOver;
-    this.winner = entry.prevState.winner;
-    this.resultReason = entry.prevState.resultReason;
-    this.fullmoveNumber = entry.prevState.fullmoveNumber;
+    const s = entry.prevState;
+    this.board = s.board;
+    this.turn = s.turn;
+    this.lastMove = s.lastMove;
+    this.gameOver = s.gameOver;
+    this.winner = s.winner;
+    this.resultReason = s.resultReason;
+    this.fullmoveNumber = s.fullmoveNumber;
     return true;
   }
 
   toNotation(move, piece, capture) {
-    const pieceMap = { p: '', n: 'N', s: 'S', r: 'R', m: 'M', k: 'K' };
+    const map = { p: '', n: 'N', s: 'S', r: 'R', m: 'M', k: 'K' };
     const fromFile = String.fromCharCode(97 + move.from.col);
     const toFile = String.fromCharCode(97 + move.to.col);
     const toRank = 8 - move.to.row;
-
-    let text = pieceMap[piece.type];
+    let text = map[piece.type];
     if (piece.type === 'p' && capture) text += fromFile;
     if (capture) text += 'x';
     text += `${toFile}${toRank}`;
@@ -179,10 +216,12 @@ export class ChessGame {
 
   getAllLegalMoves(color) {
     const moves = [];
-    for (let r = 0; r < 8; r += 1) {
-      for (let c = 0; c < 8; c += 1) {
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
         const piece = this.board[r][c];
-        if (piece && piece.color === color) moves.push(...this.getLegalMovesForSquare(r, c, false, color));
+        if (piece && piece.color === color) {
+          this._appendLegalMoves(r, c, piece, moves);
+        }
       }
     }
     return moves;
@@ -194,191 +233,193 @@ export class ChessGame {
     if (enforceTurn && piece.color !== this.turn) return [];
     if (forceColor && piece.color !== forceColor) return [];
 
-    const pseudo = this.getPseudoLegalMoves(row, col, piece);
-    return pseudo.filter((move) => {
-      const clone = this.clone();
-      clone.applyMove(move, false);
-      return !clone.isInCheck(piece.color);
-    });
+    const result = [];
+    this._appendLegalMoves(row, col, piece, result);
+    return result;
   }
 
-  createMove(fromRow, fromCol, toRow, toCol, extras = {}) {
-    return {
-      from: { row: fromRow, col: fromCol },
-      to: { row: toRow, col: toCol },
-      ...extras,
-    };
+  // Core: generate legal moves using in-place make/unmake — no clone allocation
+  _appendLegalMoves(row, col, piece, out) {
+    const pseudo = this.getPseudoLegalMoves(row, col, piece);
+    for (const move of pseudo) {
+      const snap = this._applyTemp(move);
+      const safe = !this.isInCheck(piece.color);
+      this._undoTemp(move, snap);
+      if (safe) out.push(move);
+    }
+  }
+
+  _mv(fr, fc, tr, tc, extras) {
+    return extras
+      ? { from: { row: fr, col: fc }, to: { row: tr, col: tc }, ...extras }
+      : { from: { row: fr, col: fc }, to: { row: tr, col: tc } };
   }
 
   getPseudoLegalMoves(row, col, piece) {
     switch (piece.type) {
-      case 'p':
-        return this.getPawnMoves(row, col, piece);
-      case 'n':
-        return this.getKnightMoves(row, col, piece);
-      case 's':
-        return this.getSilverMoves(row, col, piece); // Khon
-      case 'r':
-        return this.getSlidingMoves(row, col, piece, [[-1, 0], [1, 0], [0, -1], [0, 1]]);
-      case 'm':
-        return this.getMetMoves(row, col, piece); // Queen-equivalent in Ouk Chaktrang
-      case 'k':
-        return this.getKingMoves(row, col, piece);
-      default:
-        return [];
+      case 'p': return this._pawnMoves(row, col, piece);
+      case 'n': return this._knightMoves(row, col, piece);
+      case 's': return this._silverMoves(row, col, piece);
+      case 'r': return this._slidingMoves(row, col, piece, [[-1,0],[1,0],[0,-1],[0,1]]);
+      case 'm': return this._metMoves(row, col, piece);
+      case 'k': return this._kingMoves(row, col, piece);
+      default:  return [];
     }
   }
 
-  getPawnMoves(row, col, piece) {
+  _pawnMoves(row, col, piece) {
     const moves = [];
-    const direction = piece.color === 'w' ? -1 : 1;
+    const dir = piece.color === 'w' ? -1 : 1;
+    const promoRow = piece.color === 'w' ? 2 : 5;
+    const oneStep = row + dir;
 
-    const oneStep = row + direction;
     if (this.inBounds(oneStep, col) && this.isEmpty(oneStep, col)) {
-      // Makruk/Ouk Chaktrang promotion: pawn promotes to Met when reaching 6th rank
-      // from its own side: white promotes on row 2, black on row 5.
-      const promotionRow = piece.color === 'w' ? 2 : 5;
-      if (oneStep === promotionRow) {
-        moves.push(this.createMove(row, col, oneStep, col, { promotion: 'm' }));
-      } else {
-        moves.push(this.createMove(row, col, oneStep, col));
-      }
+      moves.push(this._mv(row, col, oneStep, col, oneStep === promoRow ? { promotion: 'm' } : null));
     }
 
-    [-1, 1].forEach((dc) => {
-      const nr = row + direction;
+    for (const dc of [-1, 1]) {
       const nc = col + dc;
-      if (!this.inBounds(nr, nc)) return;
-      if (this.isEnemyPiece(nr, nc, piece.color)) {
-        const promotionRow = piece.color === 'w' ? 2 : 5;
-        if (nr === promotionRow) moves.push(this.createMove(row, col, nr, nc, { promotion: 'm' }));
-        else moves.push(this.createMove(row, col, nr, nc));
+      if (!this.inBounds(oneStep, nc)) continue;
+      if (this.isEnemyPiece(oneStep, nc, piece.color)) {
+        moves.push(this._mv(row, col, oneStep, nc, oneStep === promoRow ? { promotion: 'm' } : null));
       }
-    });
-
+    }
     return moves;
   }
 
-  getKnightMoves(row, col, piece) {
+  _knightMoves(row, col, piece) {
     const moves = [];
-    const jumps = [
-      [-2, -1], [-2, 1], [2, -1], [2, 1],
-      [-1, -2], [-1, 2], [1, -2], [1, 2],
-    ];
-
-    jumps.forEach(([dr, dc]) => {
-      const nr = row + dr;
-      const nc = col + dc;
-      if (!this.inBounds(nr, nc)) return;
-      const target = this.getPiece(nr, nc);
-      if (!target || target.color !== piece.color) moves.push(this.createMove(row, col, nr, nc));
-    });
-
+    for (const [dr, dc] of [[-2,-1],[-2,1],[2,-1],[2,1],[-1,-2],[-1,2],[1,-2],[1,2]]) {
+      const nr = row + dr, nc = col + dc;
+      if (!this.inBounds(nr, nc)) continue;
+      const t = this.board[nr][nc];
+      if (!t || t.color !== piece.color) moves.push(this._mv(row, col, nr, nc));
+    }
     return moves;
   }
 
-  // Khon: one-step diagonals + one-step straight forward.
-  getSilverMoves(row, col, piece) {
+  _silverMoves(row, col, piece) {
     const moves = [];
-    const forward = piece.color === 'w' ? -1 : 1;
-    const offsets = [
-      [forward, 0],
-      [-1, -1],
-      [-1, 1],
-      [1, -1],
-      [1, 1],
-    ];
-
-    offsets.forEach(([dr, dc]) => {
-      const nr = row + dr;
-      const nc = col + dc;
-      if (!this.inBounds(nr, nc)) return;
-      const target = this.getPiece(nr, nc);
-      if (!target || target.color !== piece.color) moves.push(this.createMove(row, col, nr, nc));
-    });
-
+    const fwd = piece.color === 'w' ? -1 : 1;
+    for (const [dr, dc] of [[fwd,0],[-1,-1],[-1,1],[1,-1],[1,1]]) {
+      const nr = row + dr, nc = col + dc;
+      if (!this.inBounds(nr, nc)) continue;
+      const t = this.board[nr][nc];
+      if (!t || t.color !== piece.color) moves.push(this._mv(row, col, nr, nc));
+    }
     return moves;
   }
 
-  getSlidingMoves(row, col, piece, directions) {
+  _slidingMoves(row, col, piece, directions) {
     const moves = [];
     for (const [dr, dc] of directions) {
-      let nr = row + dr;
-      let nc = col + dc;
+      let nr = row + dr, nc = col + dc;
       while (this.inBounds(nr, nc)) {
-        const target = this.getPiece(nr, nc);
-        if (!target) {
-          moves.push(this.createMove(row, col, nr, nc));
+        const t = this.board[nr][nc];
+        if (!t) {
+          moves.push(this._mv(row, col, nr, nc));
         } else {
-          if (target.color !== piece.color) moves.push(this.createMove(row, col, nr, nc));
+          if (t.color !== piece.color) moves.push(this._mv(row, col, nr, nc));
           break;
         }
-        nr += dr;
-        nc += dc;
+        nr += dr; nc += dc;
       }
     }
     return moves;
   }
 
-  // Met (queen-equivalent in this variant): one-step diagonally only.
-  getMetMoves(row, col, piece) {
+  _metMoves(row, col, piece) {
     const moves = [];
-    [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([dr, dc]) => {
-      const nr = row + dr;
-      const nc = col + dc;
-      if (!this.inBounds(nr, nc)) return;
-      const target = this.getPiece(nr, nc);
-      if (!target || target.color !== piece.color) moves.push(this.createMove(row, col, nr, nc));
-    });
+    for (const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) {
+      const nr = row + dr, nc = col + dc;
+      if (!this.inBounds(nr, nc)) continue;
+      const t = this.board[nr][nc];
+      if (!t || t.color !== piece.color) moves.push(this._mv(row, col, nr, nc));
+    }
     return moves;
   }
 
-  getKingMoves(row, col, piece) {
+  _kingMoves(row, col, piece) {
     const moves = [];
-    for (let dr = -1; dr <= 1; dr += 1) {
-      for (let dc = -1; dc <= 1; dc += 1) {
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
         if (dr === 0 && dc === 0) continue;
-        const nr = row + dr;
-        const nc = col + dc;
+        const nr = row + dr, nc = col + dc;
         if (!this.inBounds(nr, nc)) continue;
-        const target = this.getPiece(nr, nc);
-        if (!target || target.color !== piece.color) moves.push(this.createMove(row, col, nr, nc));
+        const t = this.board[nr][nc];
+        if (!t || t.color !== piece.color) moves.push(this._mv(row, col, nr, nc));
       }
     }
     return moves;
   }
 
   isInCheck(color) {
-    let kingPos = null;
-    for (let r = 0; r < 8; r += 1) {
-      for (let c = 0; c < 8; c += 1) {
-        const piece = this.board[r][c];
-        if (piece && piece.color === color && piece.type === 'k') {
-          kingPos = { row: r, col: c };
-          break;
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = this.board[r][c];
+        if (p && p.color === color && p.type === 'k') {
+          return this.isSquareAttacked(r, c, color === 'w' ? 'b' : 'w');
         }
       }
-      if (kingPos) break;
     }
-
-    if (!kingPos) return false;
-    return this.isSquareAttacked(kingPos.row, kingPos.col, color === 'w' ? 'b' : 'w');
+    return false;
   }
 
   isSquareAttacked(row, col, byColor) {
-    for (let r = 0; r < 8; r += 1) {
-      for (let c = 0; c < 8; c += 1) {
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
         const piece = this.board[r][c];
         if (!piece || piece.color !== byColor) continue;
 
+        // Fast direct attack checks — avoid generating full move lists
         if (piece.type === 'p') {
           const dir = byColor === 'w' ? -1 : 1;
           if (r + dir === row && Math.abs(c - col) === 1) return true;
           continue;
         }
 
-        const attacks = piece.type === 'k' ? this.getKingMoves(r, c, piece) : this.getPseudoLegalMoves(r, c, piece);
-        if (attacks.some((m) => m.to.row === row && m.to.col === col)) return true;
+        if (piece.type === 'n') {
+          const dr = Math.abs(r - row), dc = Math.abs(c - col);
+          if ((dr === 2 && dc === 1) || (dr === 1 && dc === 2)) return true;
+          continue;
+        }
+
+        if (piece.type === 'k' || piece.type === 'm') {
+          // King: 1-step any; Met: 1-step diagonal
+          const dr = Math.abs(r - row), dc = Math.abs(c - col);
+          if (piece.type === 'k' && dr <= 1 && dc <= 1 && (dr + dc > 0)) return true;
+          if (piece.type === 'm' && dr === 1 && dc === 1) return true;
+          continue;
+        }
+
+        if (piece.type === 's') {
+          const fwd = byColor === 'w' ? -1 : 1;
+          const dr = row - r, dc = col - c;
+          if ((dr === fwd && dc === 0) || (Math.abs(dr) === 1 && Math.abs(dc) === 1)) return true;
+          continue;
+        }
+
+        if (piece.type === 'r') {
+          if (r === row || c === col) {
+            // Check no pieces blocking the ray
+            if (r === row) {
+              const step = col > c ? 1 : -1;
+              let blocked = false;
+              for (let nc = c + step; nc !== col; nc += step) {
+                if (this.board[r][nc]) { blocked = true; break; }
+              }
+              if (!blocked) return true;
+            } else {
+              const step = row > r ? 1 : -1;
+              let blocked = false;
+              for (let nr = r + step; nr !== row; nr += step) {
+                if (this.board[nr][c]) { blocked = true; break; }
+              }
+              if (!blocked) return true;
+            }
+          }
+          continue;
+        }
       }
     }
     return false;
