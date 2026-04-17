@@ -65,14 +65,18 @@ function PieceIcon({ piece, selected, label, animate }) {
 }
 
 // ── Human-readable move formatter ────────────────────────────────
-const PIECE_NAME = { p: 'Pawn', n: 'Horse', s: 'Khon', r: 'Rook', m: 'Queen', k: 'King' };
-const FILE_LABEL = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+const PIECE_NAME_KH = { p: 'ត្រី', n: 'សេះ', s: 'គោល', r: 'ទូក', m: 'នាង', k: 'ស្តេច' };
+// Khmer horizontal labels: ក ខ គ ឃ ង ច ឆ ជ
+const FILE_LABEL_KH = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច', 'ឆ', 'ជ'];
+// Khmer digits: ១ ២ ៣ ៤ ៥ ៦ ៧ ៨
+const KHMER_DIGITS = ['', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨'];
+const toKhNum = (n) => KHMER_DIGITS[n] ?? String(n);
 
 function formatMove(entry) {
   // entry: { from, to, piece, color, capture, notation }
-  const pieceName = PIECE_NAME[entry.piece] ?? entry.piece.toUpperCase();
-  const from = `${FILE_LABEL[entry.from.col]}${8 - entry.from.row}`;
-  const to = `${FILE_LABEL[entry.to.col]}${8 - entry.to.row}`;
+  const pieceName = PIECE_NAME_KH[entry.piece] ?? entry.piece.toUpperCase();
+  const from = `${FILE_LABEL_KH[entry.from.col]}${toKhNum(8 - entry.from.row)}`;
+  const to = `${FILE_LABEL_KH[entry.to.col]}${toKhNum(8 - entry.to.row)}`;
   const action = entry.capture ? '×' : '→';
   return `${pieceName} ${from}${action}${to}`;
 }
@@ -210,17 +214,17 @@ export default function App() {
   // ── Derived UI state
   const statusText = game.gameOver
     ? game.resultReason === 'checkmate'
-      ? `Checkmate! ${game.winner === 'w' ? 'White' : 'Black'} wins.`
-      : 'Draw by stalemate.'
-    : `${game.turn === 'w' ? 'White' : 'Black'} to move`;
+      ? `គីម! ${game.winner === 'w' ? 'បង្កោល ស' : 'បង្កោល ខ្មៅ'} ឈ្នះ។`
+      : 'ស្មើ (stalemate)'
+    : `${game.turn === 'w' ? 'បង្កោល ស' : 'បង្កោល ខ្មៅ'} ដើរ`;
 
   const detailText = game.gameOver
-    ? 'Press Restart to play again.'
+    ? 'ចុច ចាប់ផ្ដើម ម្ដងទៀត'
     : game.isInCheck(game.turn)
-      ? `${game.turn === 'w' ? 'White' : 'Black'} king is in check!`
+      ? `ស្តេច ${game.turn === 'w' ? 'ស' : 'ខ្មៅ'} ត្រូវគំរាម!`
       : isThinking
-        ? 'AI is thinking…'
-        : 'Cambodia chess · Ouk Chaktrang';
+        ? 'AI កំពុងគិត…'
+        : 'អុក ចត្រង្គ · Ouk Chaktrang';
 
   const dotClass = game.gameOver
     ? 'status-dot gameover'
@@ -237,50 +241,87 @@ export default function App() {
       </h1>
 
       <section className="app-grid">
-        {/* ── Board ── */}
-        <div className="board-wrap">
-          <div className="board-grid">
-            {Array.from({ length: 64 }, (_, idx) => {
-              const row = Math.floor(idx / 8);
-              const col = idx % 8;
-              const piece = game.getPiece(row, col);
-              const isDark = (row + col) % 2 !== 0;
-              const isSelected = selected?.row === row && selected?.col === col;
-              const isLastFrom = game.lastMove?.from.row === row && game.lastMove?.from.col === col;
-              const isLastTo = game.lastMove?.to.row === row && game.lastMove?.to.col === col;
-              const isLastMove = isLastFrom || isLastTo;
-              const targetMove = legalMoves.find((m) => m.to.row === row && m.to.col === col);
-              const isCheck = checkSquares.some((sq) => sq.row === row && sq.col === col);
-              const shouldAnim = animKey === `${row}-${col}`;
+        {/* ── Board with coordinate labels ── */}
+        <div className="board-outer">
+          {/* Top: column labels (ក–ជ) */}
+          {/* <div className="coord-row coord-top">
+            <div className="coord-corner" />
+            {FILE_LABEL_KH.map((lbl) => (
+              <div key={lbl} className="coord-cell">{lbl}</div>
+            ))}
+            <div className="coord-corner" />
+          </div> */}
 
-              const bg = isDark ? '#c8902a' : '#f5c842';
+          <div className="coord-body">
+            {/* Left: row labels (១–៨) */}
+            <div className="coord-col coord-left">
+              {Array.from({ length: 8 }, (_, r) => (
+                <div key={r} className="coord-cell">{toKhNum(8 - r)}</div>
+              ))}
+            </div>
 
-              let cls = 'board-square';
-              if (isSelected) cls += ' selected-square';
-              if (isLastMove) cls += ' last-move';
-              if (isCheck) cls += ' check-king';
-              if (targetMove) cls += piece ? ' capture-hint' : ' move-hint';
+            {/* Board */}
+            <div className="board-wrap">
+              <div className="board-grid">
+                {Array.from({ length: 64 }, (_, idx) => {
+                  const row = Math.floor(idx / 8);
+                  const col = idx % 8;
+                  const piece = game.getPiece(row, col);
+                  const isDark = (row + col) % 2 !== 0;
+                  const isSelected = selected?.row === row && selected?.col === col;
+                  const isLastFrom = game.lastMove?.from.row === row && game.lastMove?.from.col === col;
+                  const isLastTo = game.lastMove?.to.row === row && game.lastMove?.to.col === col;
+                  const isLastMove = isLastFrom || isLastTo;
+                  const targetMove = legalMoves.find((m) => m.to.row === row && m.to.col === col);
+                  const isCheck = checkSquares.some((sq) => sq.row === row && sq.col === col);
+                  const shouldAnim = animKey === `${row}-${col}`;
 
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleSquareClick(row, col)}
-                  className={cls}
-                  style={{ background: bg }}
-                  aria-label={piece ? `${piece.color === 'w' ? 'White' : 'Black'} ${PIECE_LABEL[`${piece.color}${piece.type}`]} at ${String.fromCharCode(97 + col)}${8 - row}` : undefined}
-                >
-                  {piece && (
-                    <PieceIcon
-                      piece={piece}
-                      selected={isSelected}
-                      label={PIECE_LABEL[`${piece.color}${piece.type}`]}
-                      animate={shouldAnim}
-                    />
-                  )}
-                </button>
-              );
-            })}
+                  const bg = isDark ? '#c8902a' : '#f5c842';
+
+                  let cls = 'board-square';
+                  if (isSelected) cls += ' selected-square';
+                  if (isLastMove) cls += ' last-move';
+                  if (isCheck) cls += ' check-king';
+                  if (targetMove) cls += piece ? ' capture-hint' : ' move-hint';
+
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSquareClick(row, col)}
+                      className={cls}
+                      style={{ background: bg }}
+                      aria-label={piece ? `${piece.color === 'w' ? 'ស' : 'ខ្មៅ'} ${PIECE_LABEL[`${piece.color}${piece.type}`]} ${FILE_LABEL_KH[col]}${toKhNum(8 - row)}` : undefined}
+                    >
+                      {piece && (
+                        <PieceIcon
+                          piece={piece}
+                          selected={isSelected}
+                          label={PIECE_LABEL[`${piece.color}${piece.type}`]}
+                          animate={shouldAnim}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right: row labels (១–៨) */}
+            {/* <div className="coord-col coord-right">
+              {Array.from({ length: 8 }, (_, r) => (
+                <div key={r} className="coord-cell">{toKhNum(8 - r)}</div>
+              ))}
+            </div> */}
+          </div>
+
+          {/* Bottom: column labels (ក–ជ) */}
+          <div className="coord-row coord-bottom">
+            <div className="coord-corner" />
+            {FILE_LABEL_KH.map((lbl) => (
+              <div key={lbl} className="coord-cell">{lbl}</div>
+            ))}
+            {/* <div className="coord-corner" /> */}
           </div>
         </div>
 
@@ -288,24 +329,24 @@ export default function App() {
         <aside className="glass-panel p-4 md:p-5 space-y-4">
           {/* Mode toggle */}
           <div className="flex items-center justify-between gap-3">
-            <p className="text-xs uppercase tracking-widest text-white/40">Mode</p>
+            <p className="text-xs uppercase tracking-widest text-white/40">របៀប</p>
             <button
               onClick={() => setAiEnabled((p) => !p)}
               className={`btn ${aiEnabled ? 'btn-ai-on' : 'btn-ai-off'}`}
             >
-              {aiEnabled ? '🤖 AI: On' : '👥 AI: Off'}
+              {aiEnabled ? '🤖 AI: បើក' : '👥 AI: បិទ'}
             </button>
           </div>
 
           {/* Actions */}
           <div className="grid grid-cols-2 gap-2">
-            <button onClick={handleUndo} className="btn btn-undo">↩ Undo</button>
-            <button onClick={handleRestart} className="btn btn-restart">↺ Restart</button>
+            <button onClick={handleUndo} className="btn btn-undo">↩ មកវិញ</button>
+            <button onClick={handleRestart} className="btn btn-restart">↺ ចាប់ផ្ដើម</button>
           </div>
 
           {/* Status */}
           <div className="rounded-xl bg-white/5 border border-white/8 p-3">
-            <p className="text-xs uppercase tracking-widest text-white/40 mb-1">Status</p>
+            <p className="text-xs uppercase tracking-widest text-white/40 mb-1">ស្ថានភាព</p>
             <p className="font-semibold flex items-center gap-1">
               <span className={dotClass} />
               {statusText}
@@ -315,7 +356,7 @@ export default function App() {
 
           {/* Move history */}
           <div className="rounded-xl bg-white/5 border border-white/8 p-3">
-            <p className="text-xs uppercase tracking-widest text-white/40 mb-2">Move History</p>
+            <p className="text-xs uppercase tracking-widest text-white/40 mb-2">ប្រវត្តិការដើរ</p>
             <ol className="move-history-list text-sm space-y-0.5">
               {Array.from({ length: Math.ceil(game.history.length / 2) }, (_, idx) => {
                 const wEntry = game.history[idx * 2]?.move;
@@ -324,9 +365,9 @@ export default function App() {
                   <li
                     key={idx}
                     className="grid gap-2 py-0.5 border-b border-white/6"
-                    style={{ gridTemplateColumns: '2rem 1fr 1fr' }}
+                    style={{ gridTemplateColumns: '2.2rem 1fr 1fr' }}
                   >
-                    <span className="text-white/30">{idx + 1}.</span>
+                    <span className="text-white/30">{toKhNum(idx + 1)}.</span>
                     <span className="text-white/80">{wEntry ? formatMove(wEntry) : ''}</span>
                     <span className="text-white/55">{bEntry ? formatMove(bEntry) : ''}</span>
                   </li>
