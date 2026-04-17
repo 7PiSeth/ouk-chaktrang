@@ -12,10 +12,10 @@ const FILE_LABEL_KH = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច', 'ឆ', 'ជ'];
 const KHMER_DIGITS = ['', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨'];
 const toKhNum = (n) => KHMER_DIGITS[n] ?? String(n);
 const AI_LEVELS = [
-  { label: 'Easy', value: 'easy', depth: 1 },
-  { label: 'Meduim', value: 'meduim', depth: 2 },
-  { label: 'Hard', value: 'hard', depth: 3 },
-  { label: 'Very hard', value: 'very_hard', depth: 4 },
+  { label: 'ក្មេងអាយុ១០ឆ្នាំ 👶', value: 'easy', depth: 1 },
+  { label: 'មនុស្សពេញវ័យ 👦', value: 'meduim', depth: 2 },
+  { label: 'ស្តេចទៀមកាហ្វេ 🧔', value: 'hard', depth: 3 },
+  { label: 'គ្រូតា 👴', value: 'very_hard', depth: 4 },
 ];
 
 const CELL_SIZE = 'clamp(36px, calc((100vw - 2rem - 4px) / 8), 80px)';
@@ -247,12 +247,12 @@ export default function App() {
         : 'border-[1.5px] border-[#8a8aaa] bg-[#3a3a4a]';
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[1100px] flex-col overflow-hidden bg-[radial-gradient(ellipse_at_30%_10%,#1c1c2e_0%,#0a0a0f_60%,#0d0d1a_100%)] px-4 pb-4 pt-3 text-[#f0f0f5] md:px-5 md:pb-4 md:pt-3 lg:h-dvh lg:overflow-hidden">
-      <h1 className="mb-5 h-[42px] bg-gradient-to-br from-[#f5c842] via-[#ff9f0a] to-[#ff6b35] bg-clip-text text-center font-['Moul',sans-serif] text-3xl font-bold tracking-[0.02em] text-transparent md:text-4xl">
+    <main className="mx-auto flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_at_30%_10%,#1c1c2e_0%,#0a0a0f_60%,#0d0d1a_100%)] px-4 pb-4 pt-3 text-[#f0f0f5] md:px-5 md:pb-4 md:pt-3 lg:h-dvh lg:overflow-hidden">
+      <h1 className="mb-5 h-[52px] bg-gradient-to-br from-[#f5c842] via-[#ff9f0a] to-[#ff6b35] bg-clip-text text-center font-['Moul',sans-serif] text-3xl font-bold tracking-[0.02em] text-transparent md:text-4xl">
         អុក ចត្រង្គ
       </h1>
 
-      <section className="grid min-h-0 flex-1 grid-cols-1 items-center gap-5 min-[900px]:grid-cols-[max-content_1fr] min-[900px]:gap-5">
+      <section className="grid w-full max-w-[1200px] grid-cols-1 gap-5 min-[900px]:grid-cols-[max-content_1fr]">
         <div className="mx-auto inline-flex flex-col items-center">
           <div className="flex items-stretch">
             <div className="mr-[2px] flex flex-col">
@@ -321,10 +321,10 @@ export default function App() {
           </div>
         </div>
 
-        <aside className="w-full rounded-[18px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-[20px] min-[900px]:flex min-[900px]:max-h-[calc(100dvh-5.6rem)] min-[900px]:min-w-[380px] min-[900px]:max-w-[460px] min-[900px]:flex-col min-[900px]:overflow-hidden md:p-5">
+        <aside className="w-full h-fit rounded-[18px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-[20px] min-[900px]:flex min-[900px]:max-h-[calc(100dvh-5.6rem)] min-[900px]:min-w-[380px] min-[900px]:max-w-[460px] min-[900px]:flex-col min-[900px]:overflow-hidden md:p-5">
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs uppercase tracking-widest text-white/40">របៀប</p>
+              <p className="text-xs uppercase tracking-widest text-white/40">លេងជាមួយ</p>
               <button
                 onClick={() => setAiEnabled((p) => !p)}
                 className={`inline-flex items-center justify-center rounded-[10px] border-none px-4 py-2 text-sm font-semibold tracking-[0.01em] text-white transition-[transform,filter,box-shadow] duration-100 active:scale-95 ${aiEnabled
@@ -336,7 +336,7 @@ export default function App() {
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs uppercase tracking-widest text-white/40">AI Level</p>
+              <p className="text-xs uppercase tracking-widest text-white/40">កម្រិត AI</p>
               <select
                 value={aiLevel}
                 onChange={(e) => setAiLevel(e.target.value)}
@@ -351,8 +351,8 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={handleUndo} className="inline-flex items-center justify-center rounded-[10px] border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-[#f0f0f5] transition active:scale-95 hover:bg-white/15">↩ មកវិញ</button>
-              <button onClick={handleRestart} className="inline-flex items-center justify-center rounded-[10px] border-none bg-gradient-to-br from-[#ff453a] to-[#c0392b] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_14px_rgba(255,69,58,0.3)] transition active:scale-95 hover:brightness-110 hover:shadow-[0_0_20px_rgba(255,69,58,0.5)]">↺ ចាប់ផ្ដើម</button>
+              <button onClick={handleUndo} className="inline-flex items-center justify-center rounded-[10px] border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-[#f0f0f5] transition active:scale-95 hover:bg-white/15">↩ ថយមួយជំហាន</button>
+              <button onClick={handleRestart} className="inline-flex items-center justify-center rounded-[10px] border-none bg-gradient-to-br from-[#ff453a] to-[#c0392b] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_14px_rgba(255,69,58,0.3)] transition active:scale-95 hover:brightness-110 hover:shadow-[0_0_20px_rgba(255,69,58,0.5)]">↺ ចាប់ផ្ដើមជាថ្មី</button>
             </div>
 
             <div className="rounded-xl border border-white/10 bg-white/5 p-3">
