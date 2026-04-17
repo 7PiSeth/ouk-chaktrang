@@ -1,340 +1,47 @@
-@import url('https://fonts.googleapis.com/css2?family=Angkor&family=Battambang&family=Bayon&family=Bokor&family=Chenla&family=Content&family=Dangrek&family=Fasthand&family=Freehand&family=Great+Vibes&family=Hanuman&family=Khmer&family=Koh+Santepheap&family=Koulen&family=Metal&family=Moul&family=Moulpali&family=Nokora&family=Odor+Mean+Chey&family=Poppins&family=Preahvihear&family=Raleway:wght@300;500&family=Siemreap&family=Suwannaphum&family=Taprom&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Moul&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Font is loaded via <link> in index.html (avoids @import ordering issues) ─── */
+@layer base {
+  * {
+    @apply box-border;
+  }
 
-.font-khmer {
-  font-family: 'Moul', sans-serif;
-  letter-spacing: 0.02em;
-}
+  html,
+  body,
+  #root {
+    @apply m-0 min-h-screen p-0;
+  }
 
-* {
-  box-sizing: border-box;
-}
+  body {
+    @apply overflow-x-hidden;
+    -webkit-text-size-adjust: 100%;
+  }
 
-:root {
-  color-scheme: dark;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-
-  /*
-   * Board cell size:
-   *   - On small screens: fill the viewport width minus 2×16px page padding and 2px border
-   *   - Clamp between 36 px (tiny phones) and 80 px (large desktops)
-   */
-  --page-px: 2rem;          /* px-4 on each side = 2 × 1rem */
-  --board-border: 4px;
-  --cell-size: clamp(36px, calc((100vw - var(--page-px) - var(--board-border)) / 8), 80px);
-}
-
-/* ─── Base ──────────────────────────────────────────────────────── */
-html, body {
-  margin: 0;
-  padding: 0;
-  min-height: 100dvh;       /* dynamic viewport height for mobile browsers */
-  background: radial-gradient(ellipse at 30% 10%, #1c1c2e 0%, #0a0a0f 60%, #0d0d1a 100%);
-  color: #f0f0f5;
-  /* Prevent zoom on input tap on iOS */
-  -webkit-text-size-adjust: 100%;
-}
-
-/* ─── Layout wrapper ─────────────────────────────────────────────── */
-.app-root {
-  width: 100%;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 1.25rem 1rem 2rem;
-}
-
-/* Desktop: side-by-side */
-@media (min-width: 900px) {
-  .app-root {
-    padding: 2rem 1.5rem 3rem;
+  @media (min-width: 1024px) {
+    body {
+      overflow: hidden;
+    }
   }
 }
 
-/* ─── Main grid ──────────────────────────────────────────────────── */
-.app-grid {
-  display: grid;
-  gap: 1.25rem;
-  align-items: start;
-  /* Mobile/tablet: board on top, panel below */
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 900px) {
-  .app-grid {
-    /* Desktop: board left, panel fills remaining space */
-    grid-template-columns: max-content 1fr;
-    gap: 1.75rem;
+@layer utilities {
+  @keyframes piece-drop {
+    0% {
+      transform: scale(1.18) translateY(-12%);
+      opacity: 0.7;
+    }
+    60% {
+      transform: scale(0.95) translateY(3%);
+      opacity: 1;
+    }
+    80% {
+      transform: scale(1.04) translateY(-2%);
+    }
+    100% {
+      transform: scale(1) translateY(0);
+    }
   }
 }
-
-/* ─── Board outer (with coordinate labels) ────────────────────────── */
-.board-outer {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 0 auto;
-}
-
-/* A row of column labels (top or bottom of board) */
-.coord-row {
-  display: flex;
-  align-items: center;
-}
-
-/* The middle section: left-labels + board + right-labels */
-.coord-body {
-  display: flex;
-  align-items: stretch;
-}
-
-/* A column of row labels (left or right of board) */
-.coord-col {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Individual coordinate cell – sized to match the board cell */
-.coord-cell {
-  width: var(--cell-size);
-  height: var(--cell-size);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: clamp(0.6rem, calc(var(--cell-size) * 0.22), 0.85rem);
-  font-weight: 700;
-  color: rgba(255, 214, 10, 0.85);
-  text-shadow: 0 1px 6px rgba(0,0,0,0.7);
-  user-select: none;
-  pointer-events: none;
-  letter-spacing: 0;
-  line-height: 1;
-}
-
-/* Corner spacer in coord-row (aligns columns above/below board squares) */
-.coord-corner {
-  width: var(--cell-size);
-  height: var(--cell-size);
-  flex-shrink: 0;
-}
-
-.coord-top    { margin-bottom: 2px; }
-.coord-bottom { margin-top:    2px; }
-.coord-left   { margin-right:  2px; }
-.coord-right  { margin-left:   2px; }
-
-/* ─── Board wrapper ──────────────────────────────────────────────── */
-.board-wrap {
-  line-height: 0;            /* remove gap under inline-block children */
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow:
-    0 0 0 2px rgba(0,0,0,0.8),
-    0 24px 60px rgba(0,0,0,0.7),
-    0 4px 16px rgba(0,0,0,0.5);
-}
-
-.board-grid {
-  display: grid;
-  grid-template-columns: repeat(8, var(--cell-size));
-  grid-template-rows:    repeat(8, var(--cell-size));
-}
-
-/* ─── Board squares ──────────────────────────────────────────────── */
-.board-square {
-  position: relative;
-  width: var(--cell-size);
-  height: var(--cell-size);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: none;
-  appearance: none;
-  cursor: pointer;
-  transition: filter 0.12s ease;
-  -webkit-tap-highlight-color: transparent; /* remove grey flash on iOS tap */
-}
-
-.board-square:hover {
-  filter: brightness(1.13);
-}
-
-/* ─── Piece ──────────────────────────────────────────────────────── */
-.piece {
-  /* Size relative to cell so it scales at every breakpoint */
-  width: 82%;
-  height: 82%;
-  min-width: 0;
-  min-height: 0;
-  pointer-events: none;
-  user-select: none;
-  display: block;
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.18s ease;
-  will-change: transform, filter;
-}
-
-.piece.selected {
-  transform: scale(1.12) translateY(-4%);
-  filter: drop-shadow(0 6px 18px rgba(10, 132, 255, 0.7));
-}
-
-@keyframes piece-drop {
-  0%   { transform: scale(1.18) translateY(-12%); opacity: 0.7; }
-  60%  { transform: scale(0.95) translateY(3%);   opacity: 1;   }
-  80%  { transform: scale(1.04) translateY(-2%);               }
-  100% { transform: scale(1)    translateY(0);                  }
-}
-
-.piece-animate {
-  animation: piece-drop 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-/* ─── Square overlays ────────────────────────────────────────────── */
-.selected-square {
-  box-shadow: inset 0 0 0 3px rgba(10, 132, 255, 0.9);
-}
-
-.move-hint::after,
-.capture-hint::after,
-.last-move::after,
-.check-king::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.move-hint::after {
-  inset: 34%;
-  border-radius: 9999px;
-  background: rgba(50, 215, 75, 0.55);
-  box-shadow: 0 0 8px rgba(50, 215, 75, 0.4);
-}
-
-.capture-hint::after {
-  inset: 7%;
-  border-radius: 9999px;
-  border: 4px solid rgba(255, 59, 48, 0.85);
-  box-shadow: inset 0 0 10px rgba(255, 59, 48, 0.2);
-}
-
-.last-move::after {
-  background: rgba(255, 214, 10, 0.3);
-}
-
-.check-king::after {
-  background: rgba(255, 59, 48, 0.4);
-  box-shadow: inset 0 0 20px rgba(255, 59, 48, 0.5);
-}
-
-/* ─── Side panel (glass) ─────────────────────────────────────────── */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  /* On mobile: full width under the board */
-  width: 100%;
-}
-
-@media (min-width: 900px) {
-  .glass-panel {
-    /* On desktop: let it fill the right column */
-    min-width: 380px;
-    max-width: 460px;
-  }
-}
-
-/* ─── Buttons – Apple-style ──────────────────────────────────────── */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 10px;
-  font-family: inherit;
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
-  will-change: transform;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.btn:active { transform: scale(0.94); }
-
-.btn-ai-on {
-  background: linear-gradient(135deg, #30d158, #25a244);
-  color: #fff;
-  box-shadow: 0 0 14px rgba(48, 209, 88, 0.35);
-}
-.btn-ai-on:hover  { filter: brightness(1.1); box-shadow: 0 0 20px rgba(48, 209, 88, 0.55); }
-
-.btn-ai-off {
-  background: linear-gradient(135deg, #0a84ff, #0060df);
-  color: #fff;
-  box-shadow: 0 0 14px rgba(10, 132, 255, 0.35);
-}
-.btn-ai-off:hover { filter: brightness(1.1); box-shadow: 0 0 20px rgba(10, 132, 255, 0.55); }
-
-.btn-undo {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f0f0f5;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-.btn-undo:hover { background: rgba(255, 255, 255, 0.14); }
-
-.btn-restart {
-  background: linear-gradient(135deg, #ff453a, #c0392b);
-  color: #fff;
-  box-shadow: 0 0 14px rgba(255, 69, 58, 0.3);
-}
-.btn-restart:hover { filter: brightness(1.1); box-shadow: 0 0 20px rgba(255, 69, 58, 0.5); }
-
-/* ─── Title ──────────────────────────────────────────────────────── */
-.title-gradient {
-  background: linear-gradient(135deg, #f5c842 0%, #ff9f0a 50%, #ff6b35 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  height: 50px;
-}
-
-/* ─── Status dot ─────────────────────────────────────────────────── */
-@keyframes status-pulse {
-  0%, 100% { opacity: 1;    transform: scale(1);    }
-  50%       { opacity: 0.5; transform: scale(0.82); }
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 9999px;
-  display: inline-block;
-  flex-shrink: 0;
-  margin-right: 6px;
-}
-.status-dot.thinking   { background: #ff9f0a; animation: status-pulse 0.9s ease-in-out infinite; }
-.status-dot.white-turn { background: #f0f0f5; }
-.status-dot.black-turn { background: #3a3a4a; border: 1.5px solid #8a8aaa; }
-.status-dot.gameover   { background: #ff453a; }
-
-/* ─── Move history ───────────────────────────────────────────────── */
-.move-history-list {
-  max-height: 220px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.12) transparent;
-}
-.move-history-list::-webkit-scrollbar       { width: 4px; }
-.move-history-list::-webkit-scrollbar-track { background: transparent; }
-.move-history-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 9999px; }
