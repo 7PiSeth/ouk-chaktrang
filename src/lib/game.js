@@ -18,7 +18,7 @@ export class ChessGame {
   }
 
   setupInitialPosition() {
-    const back = ['r', 'n', 's', 'm', 'k', 's', 'n', 'r'];
+    const back = ['r', 'n', 's', 'k', 'm', 's', 'n', 'r'];
     for (let col = 0; col < 8; col++) {
       this.board[0][col] = { type: back[col], color: 'b', hasMoved: false };
       this.board[7][col] = { type: back[col], color: 'w', hasMoved: false };
@@ -260,10 +260,10 @@ export class ChessGame {
       case 'p': return this._pawnMoves(row, col, piece);
       case 'n': return this._knightMoves(row, col, piece);
       case 's': return this._silverMoves(row, col, piece);
-      case 'r': return this._slidingMoves(row, col, piece, [[-1,0],[1,0],[0,-1],[0,1]]);
+      case 'r': return this._slidingMoves(row, col, piece, [[-1, 0], [1, 0], [0, -1], [0, 1]]);
       case 'm': return this._metMoves(row, col, piece);
       case 'k': return this._kingMoves(row, col, piece);
-      default:  return [];
+      default: return [];
     }
   }
 
@@ -289,7 +289,7 @@ export class ChessGame {
 
   _knightMoves(row, col, piece) {
     const moves = [];
-    for (const [dr, dc] of [[-2,-1],[-2,1],[2,-1],[2,1],[-1,-2],[-1,2],[1,-2],[1,2]]) {
+    for (const [dr, dc] of [[-2, -1], [-2, 1], [2, -1], [2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2]]) {
       const nr = row + dr, nc = col + dc;
       if (!this.inBounds(nr, nc)) continue;
       const t = this.board[nr][nc];
@@ -301,7 +301,7 @@ export class ChessGame {
   _silverMoves(row, col, piece) {
     const moves = [];
     const fwd = piece.color === 'w' ? -1 : 1;
-    for (const [dr, dc] of [[fwd,0],[-1,-1],[-1,1],[1,-1],[1,1]]) {
+    for (const [dr, dc] of [[fwd, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]]) {
       const nr = row + dr, nc = col + dc;
       if (!this.inBounds(nr, nc)) continue;
       const t = this.board[nr][nc];
@@ -330,7 +330,7 @@ export class ChessGame {
 
   _metMoves(row, col, piece) {
     const moves = [];
-    for (const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) {
+    for (const [dr, dc] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
       const nr = row + dr, nc = col + dc;
       if (!this.inBounds(nr, nc)) continue;
       const t = this.board[nr][nc];
