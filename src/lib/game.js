@@ -18,7 +18,8 @@ export class ChessGame {
   }
 
   setupInitialPosition() {
-    const back = ['r', 'n', 's', 'm', 'k', 's', 'n', 'r'];
+    // Swap King <-> Queen (Met) files so queen is to the right of king for both sides.
+    const back = ['r', 'n', 's', 'k', 'm', 's', 'n', 'r'];
     for (let col = 0; col < 8; col++) {
       this.board[0][col] = { type: back[col], color: 'b', hasMoved: false };
       this.board[7][col] = { type: back[col], color: 'w', hasMoved: false };
